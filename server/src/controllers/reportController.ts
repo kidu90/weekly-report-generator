@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { ServiceError } from "../utils/errors";
+import { requireParam } from "../utils/request";
 import * as reportService from "../services/reportService";
 import { ReportInput, ReportUpdateInput } from "../validation/reportSchema";
 
@@ -45,7 +46,7 @@ export async function updateReport(req: Request, res: Response): Promise<void> {
   try {
     const force = req.query.force === "true";
     const report = await reportService.updateReport(
-      req.params.id,
+      requireParam(req.params.id, "id"),
       req.user!.userId,
       req.body as ReportUpdateInput,
       force
@@ -58,7 +59,7 @@ export async function updateReport(req: Request, res: Response): Promise<void> {
 
 export async function submitReport(req: Request, res: Response): Promise<void> {
   try {
-    const report = await reportService.submitReport(req.params.id, req.user!.userId);
+    const report = await reportService.submitReport(requireParam(req.params.id, "id"), req.user!.userId);
     res.json(report);
   } catch (error) {
     handleError(error, res);

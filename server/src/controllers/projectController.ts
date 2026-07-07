@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { requireParam } from "../utils/request";
 import { ServiceError } from "../utils/errors";
 import * as projectService from "../services/projectService";
 import { ProjectInput } from "../validation/projectSchema";
@@ -33,7 +34,7 @@ export async function createProject(req: Request, res: Response): Promise<void> 
 
 export async function updateProject(req: Request, res: Response): Promise<void> {
   try {
-    const project = await projectService.updateProject(req.params.id, req.body as ProjectInput);
+    const project = await projectService.updateProject(requireParam(req.params.id, "id"), req.body as ProjectInput);
     res.json(project);
   } catch (error) {
     handleError(error, res);
@@ -42,7 +43,7 @@ export async function updateProject(req: Request, res: Response): Promise<void> 
 
 export async function deleteProject(req: Request, res: Response): Promise<void> {
   try {
-    const project = await projectService.deleteProject(req.params.id);
+    const project = await projectService.deleteProject(requireParam(req.params.id, "id"));
     res.json(project);
   } catch (error) {
     handleError(error, res);
