@@ -1,0 +1,382 @@
+{
+  "info": {
+    "name": "Weekly Reports API",
+    "description": "Projects and reports endpoints for the weekly-report-generator backend.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000" },
+    { "key": "token", "value": "" },
+    { "key": "projectId", "value": "" },
+    { "key": "reportId", "value": "" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Projects",
+      "item": [
+        {
+          "name": "List Projects",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/projects"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has projects array', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('projects');",
+                  "    pm.expect(body.projects).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Project (Manager)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Platform Revamp\",\n  \"description\": \"Q3 platform modernization initiative\",\n  \"members\": []\n}"
+            },
+            "url": "{{baseUrl}}/api/projects"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has _id', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('_id');",
+                  "    pm.collectionVariables.set('projectId', body._id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Project (Manager)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Platform Revamp\",\n  \"description\": \"Updated project description\",\n  \"members\": []\n}"
+            },
+            "url": "{{baseUrl}}/api/projects/{{projectId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has _id and updated description', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('_id');",
+                  "    pm.expect(body.description).to.eql('Updated project description');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Project (Manager)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/projects/{{projectId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has _id', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('_id');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Create Report (TeamMember)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"weekStart\": \"2026-07-06\",\n  \"weekEndDate\": \"2026-07-12\",\n  \"project\": \"{{projectId}}\",\n  \"tasksCompleted\": [\"Shiped auth middleware\", \"Added report models\"],\n  \"tasksPlanned\": [\"Wire routes\", \"Postman collection\"],\n  \"blockers\": \"None\",\n  \"hoursWorked\": 38,\n  \"notes\": \"Good progress this week\"\n}"
+            },
+            "url": "{{baseUrl}}/api/reports"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has _id and draft status', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('_id');",
+                  "    pm.expect(body.status).to.eql('draft');",
+                  "    pm.collectionVariables.set('reportId', body._id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get My Reports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/me?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "me"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "project", "value": "{{projectId}}", "disabled": true }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has reports and pagination', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('reports');",
+                  "    pm.expect(body.reports).to.be.an('array');",
+                  "    pm.expect(body).to.have.property('pagination');",
+                  "    pm.expect(body.pagination).to.have.property('page');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Report (Owner)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tasksCompleted\": [\"Shipped auth middleware\", \"Added report models\", \"Wired routes\"],\n  \"notes\": \"Updated before submission\"\n}"
+            },
+            "url": "{{baseUrl}}/api/reports/{{reportId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has _id and updated notes', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('_id');",
+                  "    pm.expect(body.notes).to.eql('Updated before submission');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Submit Report (Owner)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/api/reports/{{reportId}}/submit"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is submitted with submittedAt', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.status).to.eql('submitted');",
+                  "    pm.expect(body).to.have.property('submittedAt');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Submitted Report Blocked",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Should be rejected without force\"\n}"
+            },
+            "url": "{{baseUrl}}/api/reports/{{reportId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 409 when editing submitted report without force', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "",
+                  "pm.test('Response has error message', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('message');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Submitted Report With Force",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Corrected after manager review\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/{{reportId}}?force=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "{{reportId}}"],
+              "query": [{ "key": "force", "value": "true" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 with force=true', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has updated notes', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.notes).to.eql('Corrected after manager review');",
+                  "    pm.expect(body.status).to.eql('submitted');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Reports (Manager)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports?week=2026-07-08&project={{projectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports"],
+              "query": [
+                { "key": "week", "value": "2026-07-08" },
+                { "key": "teamMember", "value": "", "disabled": true },
+                { "key": "project", "value": "{{projectId}}" },
+                { "key": "from", "value": "2026-07-01", "disabled": true },
+                { "key": "to", "value": "2026-07-31", "disabled": true }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has reports and submissionStatus', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('reports');",
+                  "    pm.expect(body.reports).to.be.an('array');",
+                  "    pm.expect(body).to.have.property('submissionStatus');",
+                  "    pm.expect(body.submissionStatus).to.be.an('array');",
+                  "    if (body.submissionStatus.length > 0) {",
+                  "        pm.expect(body.submissionStatus[0]).to.have.property('status');",
+                  "        pm.expect(['submitted', 'pending', 'late']).to.include(body.submissionStatus[0].status);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
