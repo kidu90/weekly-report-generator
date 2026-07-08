@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { login as loginRequest } from '@/api/auth'
 import { setAuthTokenGetter } from '@/api/http'
+import { queryClient } from '@/lib/queryClient'
 import type { AuthLoginInput } from '@/schemas/auth'
 import type { AuthUser, UserRole } from '@/types/api'
 
@@ -33,12 +34,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       role: user?.role ?? null,
       isLoading,
       signIn: async (input) => {
+        queryClient.clear()
         const response = await loginRequest(input)
         setUser(response.user)
         setToken(response.token)
         return response.user
       },
       signOut: () => {
+        queryClient.clear()
         setUser(null)
         setToken(null)
       },

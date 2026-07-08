@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   Bar,
@@ -19,6 +19,7 @@ import { PageSkeleton } from '@/components/feedback/PageSkeleton'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { getWeekRange, formatWeekLabel } from '@/lib/dates'
+import { getApiErrorMessage } from '@/api/http'
 
 const trendPalette = ['#8b5cf6', '#06b6d4', '#f97316', '#10b981', '#ef4444', '#6366f1']
 
@@ -52,6 +53,19 @@ export function DashboardPage() {
     queryFn: () => getWorkloadByProject(trendRange.from, trendRange.to),
   })
 
+  useEffect(() => {
+    for (const [label, query] of [
+      ['summary', summaryQuery],
+      ['submission-status', statusQuery],
+      ['trend', trendQuery],
+      ['workload', workloadQuery],
+    ] as const) {
+      if (query.isError) {
+        console.error(`Dashboard ${label} query failed`, getApiErrorMessage(query.error))
+      }
+    }
+  }, [summaryQuery.error, summaryQuery.isError, statusQuery.error, statusQuery.isError, trendQuery.error, trendQuery.isError, workloadQuery.error, workloadQuery.isError])
+
   if (summaryQuery.isLoading || statusQuery.isLoading || trendQuery.isLoading || workloadQuery.isLoading) {
     return <PageSkeleton />
   }
@@ -61,8 +75,18 @@ export function DashboardPage() {
   const workload = workloadQuery.data ?? []
   const statuses = statusQuery.data ?? []
 
+  const errorQuery = summaryQuery.error ?? statusQuery.error ?? trendQuery.error ?? workloadQuery.error
+
   if (!summary || !trend) {
     return <PageSkeleton />
+  }
+
+  if (errorQuery) {
+    return (
+      <div className="rounded-3xl border border-destructive/40 bg-destructive/10 p-6 text-sm text-destructive">
+        Manager dashboard data failed to load. Check the browser console for the query error and verify the current user is signed in as a Manager.
+      </div>
+    )
   }
 
   return (
