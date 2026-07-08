@@ -1,12 +1,12 @@
 # Weekly Report Generator — API
 
-Express + MongoDB backend with AWS Cognito authentication.
+Express + MongoDB backend with self-hosted JWT authentication.
 
 ## Running locally
 
 ```bash
 cd server
-cp .env.example .env   # fill in MONGO_URI and Cognito vars
+cp .env.example .env   # fill in MONGO_URI and JWT_SECRET
 npm install
 npm run dev
 ```
@@ -18,25 +18,25 @@ Import both files from `server/postman/`:
 - `weekly-reports.postman_collection.json`
 - `weekly-reports.postman_environment.json`
 
-Set the environment `token` to a valid **Cognito ID token** (Bearer). The collection uses `{{baseUrl}}` (default `http://localhost:5000`) and stores `projectId` / `reportId` from create responses for chained requests.
+First call `POST /api/auth/register` or `POST /api/auth/login` to obtain a JWT, then set the Postman environment `token` variable to that value. The collection uses `{{baseUrl}}` (default `http://localhost:5000`) and stores `projectId` / `reportId` from create responses for chained requests.
 
-**Suggested run order:** use a **Manager** token for Projects → Create/Update, then switch to a **TeamMember** token for report create/submit flows, then switch back to **Manager** for `GET /api/reports`.
+**Suggested run order:** register or log in as a **Manager** for Projects and manager dashboard requests, then register or log in as a **TeamMember** for report create/submit flows, then switch back to the **Manager** token for `GET /api/reports` and dashboard endpoints.
 
 ## Role-based access control
 
-All `/api/projects` and `/api/reports` routes require a valid Cognito JWT. The `authenticate` middleware verifies the ID token and attaches `req.user` (`userId`, `email`, `role`). Role comes from Cognito groups: `Manager` or `TeamMember`.
+All `/api/auth`, `/api/projects`, `/api/reports`, `/api/dashboard`, and `/mcp` routes require a valid JWT. The `authenticate` middleware verifies the bearer token and attaches `req.user` (`userId`, `email`, `role`). Roles are stored directly in the token payload and are still `Manager` or `TeamMember`.
 
-| Endpoint | Auth | Role | Notes |
-|----------|------|------|-------|
-| `GET /api/projects` | Bearer | Any authenticated | Team members need the project list to tag reports. |
-| `POST /api/projects` | Bearer | **Manager** | `createdBy` is set from `req.user.userId`. |
-| `PUT /api/projects/:id` | Bearer | **Manager** | Full body validated with `projectSchema`. |
-| `DELETE /api/projects/:id` | Bearer | **Manager** | |
-| `POST /api/reports` | Bearer | **TeamMember** | Owner is always `req.user.userId`; body `status` / `submittedAt` are ignored. |
-| `GET /api/reports/me` | Bearer | Any authenticated | Returns only the caller's reports. Optional `?project=`, `?page=`, `?limit=`. |
-| `PUT /api/reports/:id` | Bearer | Owner only | Service checks `report.owner === req.user.userId`. Submitted reports return **409** unless `?force=true`. |
-| `PATCH /api/reports/:id/submit` | Bearer | Owner only | Sets `status: "submitted"` and `submittedAt: now`. |
-| `GET /api/reports` | Bearer | **Manager** | Team-wide view. Query: `week`, `teamMember`, `project`, `from`, `to`. |
+| Endpoint                        | Auth   | Role              | Notes                                                                                                     |
+| ------------------------------- | ------ | ----------------- | --------------------------------------------------------------------------------------------------------- |
+| `GET /api/projects`             | Bearer | Any authenticated | Team members need the project list to tag reports.                                                        |
+| `POST /api/projects`            | Bearer | **Manager**       | `createdBy` is set from `req.user.userId`.                                                                |
+| `PUT /api/projects/:id`         | Bearer | **Manager**       | Full body validated with `projectSchema`.                                                                 |
+| `DELETE /api/projects/:id`      | Bearer | **Manager**       |                                                                                                           |
+| `POST /api/reports`             | Bearer | **TeamMember**    | Owner is always `req.user.userId`; body `status` / `submittedAt` are ignored.                             |
+| `GET /api/reports/me`           | Bearer | Any authenticated | Returns only the caller's reports. Optional `?project=`, `?page=`, `?limit=`.                             |
+| `PUT /api/reports/:id`          | Bearer | Owner only        | Service checks `report.owner === req.user.userId`. Submitted reports return **409** unless `?force=true`. |
+| `PATCH /api/reports/:id/submit` | Bearer | Owner only        | Sets `status: "submitted"` and `submittedAt: now`.                                                        |
+| `GET /api/reports`              | Bearer | **Manager**       | Team-wide view. Query: `week`, `teamMember`, `project`, `from`, `to`.                                     |
 
 ### Submitted report edits (`?force=true`)
 

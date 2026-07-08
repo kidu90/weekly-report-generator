@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -7,8 +8,6 @@ import reportRoutes from "./routes/reports";
 import projectRoutes from "./routes/projects";
 import dashboardRoutes from "./routes/dashboard";
 import { createMcpRouter } from "./mcp/server";
-
-dotenv.config();
 
 const app = express();
 
@@ -30,7 +29,7 @@ app.use("/api/projects", projectRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/mcp", createMcpRouter());
-// app.use("/api/auth", authRoutes);
+app.use("/api/auth", authRoutes);
 
 const PORT = process.env.PORT || 5000;
 

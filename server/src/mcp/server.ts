@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
 import type { Request, Response, Router } from "express";
 import { Router as createRouter } from "express";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp";
-import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types";
-import { isInitializeRequest } from "@modelcontextprotocol/sdk/types";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
+import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { authenticate, requireRole } from "../middleware/auth";
 import type { AuthUser } from "../middleware/auth";
 import * as reportService from "../services/reportService";

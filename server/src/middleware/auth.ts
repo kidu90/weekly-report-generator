@@ -1,5 +1,5 @@
-import { CognitoJwtVerifier } from "aws-jwt-verify";
 import { Request, Response, NextFunction } from "express";
+import { verifyAccessToken } from "../utils/jwt";
 
 export type UserRole = "Manager" | "TeamMember";
 
@@ -9,67 +9,24 @@ export interface AuthUser {
   role: UserRole;
 }
 
-interface CognitoIdTokenPayload {
-  sub: string;
-  email?: string;
-  "cognito:groups"?: string[];
-}
-
-const verifier = CognitoJwtVerifier.create({
-  userPoolId: process.env.COGNITO_USER_POOL_ID!,
-  tokenUse: "id",
-  clientId: process.env.COGNITO_CLIENT_ID!,
-});
-
-function deriveRole(groups: string[] | undefined): UserRole | null {
-  if (!groups?.length) {
-    return null;
-  }
-
-  if (groups.includes("Manager")) {
-    return "Manager";
-  }
-
-  if (groups.includes("TeamMember")) {
-    return "TeamMember";
-  }
-
-  return null;
-}
-
 export async function authenticate(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   const authHeader = req.headers.authorization;
 
   if (!authHeader?.startsWith("Bearer ")) {
-    res.status(401).json({ message: "Missing or invalid Authorization header" });
+    res
+      .status(401)
+      .json({ message: "Missing or invalid Authorization header" });
     return;
   }
 
   const token = authHeader.slice("Bearer ".length);
 
   try {
-    const payload = (await verifier.verify(token)) as CognitoIdTokenPayload;
-    const role = deriveRole(payload["cognito:groups"]);
-
-    if (!role) {
-      res.status(403).json({ message: "User is not assigned a valid role" });
-      return;
-    }
-
-    if (!payload.email) {
-      res.status(403).json({ message: "Token is missing email claim" });
-      return;
-    }
-
-    req.user = {
-      userId: payload.sub,
-      email: payload.email,
-      role,
-    };
+    req.user = verifyAccessToken(token);
 
     next();
   } catch {
