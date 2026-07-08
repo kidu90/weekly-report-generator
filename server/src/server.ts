@@ -6,12 +6,17 @@ import authRoutes from "./routes/auth";
 import reportRoutes from "./routes/reports";
 import projectRoutes from "./routes/projects";
 import dashboardRoutes from "./routes/dashboard";
+import { createMcpRouter } from "./mcp/server";
 
 dotenv.config();
 
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    exposedHeaders: ["mcp-session-id", "mcp-protocol-version"],
+  }),
+);
 app.use(express.json());
 
 connectDB();
@@ -23,8 +28,9 @@ app.get("/", (_req, res) => {
 // Route mounts
 app.use("/api/projects", projectRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/mcp", createMcpRouter());
 // app.use("/api/auth", authRoutes);
-// app.use("/api/dashboard", dashboardRoutes);
 
 const PORT = process.env.PORT || 5000;
 
