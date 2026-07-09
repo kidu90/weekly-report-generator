@@ -6,6 +6,7 @@ import { useTheme } from '@/context/ThemeContext'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
+import { ChatWidget } from '@/components/ChatWidget'
 
 const navItems = [
   { to: '/reports', label: 'My Reports', roles: ['TeamMember', 'Manager'] as const },
@@ -109,6 +110,7 @@ export function AppShell() {
         <main className="flex-1 p-4 lg:p-8">
           <Outlet />
         </main>
+        <ChatWidget />
       </div>
     </div>
   )

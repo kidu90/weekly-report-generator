@@ -7,6 +7,7 @@ import authRoutes from "./routes/auth";
 import reportRoutes from "./routes/reports";
 import projectRoutes from "./routes/projects";
 import dashboardRoutes from "./routes/dashboard";
+import chatRoutes from "./routes/chat";
 import { createMcpRouter } from "./mcp/server";
 
 const app = express();
@@ -30,6 +31,7 @@ app.get("/", (_req, res) => {
 app.use("/api/projects", projectRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/chat", chatRoutes);
 app.use("/mcp", createMcpRouter());
 app.use("/api/auth", authRoutes);
 

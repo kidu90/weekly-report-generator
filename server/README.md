@@ -52,6 +52,20 @@ By default, once a report is submitted it is **immutable** (HTTP 409). Pass `?fo
 
 Week scope comes from `?week=`, or `?from=` / `?to=`, or defaults to the current calendar week (Monday–Sunday).
 
+## AI assistant
+
+See [docs/ai-assistant.md](../docs/ai-assistant.md) for chat endpoints, prompt design, MCP scoping, and data privacy.
+
+Quick summary:
+
+- `POST /api/chat` — Manager-only free-form chat with Anthropic + MCP tool loop (max 5 rounds).
+- `POST /api/chat/team-summary` — Manager-only canned weekly summary.
+- Conversation history is in-memory per `conversationId`, bound to the authenticated manager.
+- Tool inputs are Zod-validated even though the caller is an LLM — model output is untrusted.
+- The model only sees data a Manager could already fetch via the REST/MCP API.
+
+Configure `ANTHROPIC_API_KEY` (and optionally `ANTHROPIC_MODEL`, `MCP_BASE_URL`) in `server/.env`.
+
 ## Architecture
 
 ```
