@@ -20,7 +20,7 @@ function handleError(error: unknown, res: Response): void {
 
 export async function getSummary(req: Request, res: Response): Promise<void> {
   try {
-    const query = req.query as unknown as DashboardSummaryQuery;
+    const query = req.validatedQuery as DashboardSummaryQuery;
     const summary = await dashboardService.getWeeklySummary(query.weekStart);
     res.json(summary);
   } catch (error) {
@@ -33,7 +33,7 @@ export async function getSubmissionStatus(
   res: Response,
 ): Promise<void> {
   try {
-    const query = req.query as unknown as DashboardSubmissionStatusQuery;
+    const query = req.validatedQuery as DashboardSubmissionStatusQuery;
     const submissionStatus = await dashboardService.getSubmissionStatusByMember(
       query.weekStart,
     );
@@ -45,7 +45,7 @@ export async function getSubmissionStatus(
 
 export async function getWorkload(req: Request, res: Response): Promise<void> {
   try {
-    const query = req.query as unknown as DashboardWorkloadQuery;
+    const query = req.validatedQuery as DashboardWorkloadQuery;
     const workload = await dashboardService.getWorkloadByProject(
       query.from,
       query.to,
@@ -58,7 +58,7 @@ export async function getWorkload(req: Request, res: Response): Promise<void> {
 
 export async function getTrend(req: Request, res: Response): Promise<void> {
   try {
-    const query = req.query as unknown as DashboardTrendQuery;
+    const query = req.validatedQuery as DashboardTrendQuery;
     const trend = await dashboardService.getTasksCompletedTrend(
       query.from,
       query.to,

@@ -9,6 +9,15 @@ import { EmptyState } from '@/components/feedback/EmptyState'
 import { PageSkeleton } from '@/components/feedback/PageSkeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { formatShortDate, formatWeekLabel } from '@/lib/dates'
+import type { ReportSummary } from '@/types/api'
+
+function projectLabel(project: ReportSummary['project']): string {
+  if (typeof project === 'string') {
+    return project
+  }
+
+  return project.name || project._id
+}
 
 function statusVariant(status: string) {
   if (status === 'submitted') {
@@ -81,7 +90,7 @@ export function ReportsPage() {
                     {groupedReports[weekStart].map((report) => (
                       <TableRow key={report._id}>
                         <TableCell>
-                          <div className="font-medium">{typeof report.project === 'string' ? report.project : report.project.name}</div>
+                          <div className="font-medium">{projectLabel(report.project)}</div>
                           <div className="text-xs text-muted-foreground">Week of {formatShortDate(report.weekStart)}</div>
                         </TableCell>
                         <TableCell>

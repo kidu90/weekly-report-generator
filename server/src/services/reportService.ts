@@ -224,7 +224,12 @@ export async function getMyReports(ownerId: string, filters: MyReportsFilters) {
   const skip = (page - 1) * limit;
 
   const [reports, total] = await Promise.all([
-    Report.find(query).sort({ weekStart: -1 }).skip(skip).limit(limit).lean(),
+    Report.find(query)
+      .sort({ weekStart: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("project", "name")
+      .lean(),
     Report.countDocuments(query),
   ]);
 

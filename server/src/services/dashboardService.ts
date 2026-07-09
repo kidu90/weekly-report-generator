@@ -98,8 +98,8 @@ async function listActiveTeamMembers(weekEndDate: Date) {
 async function listSubmittedReportsInWeek(range: WeeklyRange) {
   return Report.find({
     status: "submitted",
-    weekStart: range.weekStart,
-    weekEndDate: range.weekEndDate,
+    weekStart: { $lte: endOfDay(range.weekEndDate) },
+    weekEndDate: { $gte: startOfDay(range.weekStart) },
   })
     .select("owner project tasksCompleted blockers weekStart weekEndDate")
     .populate("project", "name")

@@ -1,6 +1,6 @@
 # AI Assistant
 
-The manager AI assistant combines the Anthropic Messages API with the local MCP server so Claude can query the same dashboard and report services used by the REST API.
+The manager AI assistant combines the Google Gemini API with the local MCP server so Gemini can query the same dashboard and report services used by the REST API.
 
 ## Endpoints
 
@@ -31,7 +31,7 @@ Response:
 }
 ```
 
-Conversation history is kept **in memory** on the server, keyed by `conversationId` and bound to the authenticated manager. History is trimmed to the last 20 messages. It is not persisted to MongoDB and is lost on server restart.
+Conversation history is kept **in memory** on the server, keyed by `conversationId` and bound to the authenticated manager. History is trimmed to the last 20 turns. It is not persisted to MongoDB and is lost on server restart.
 
 Tool calls are capped at **5 rounds** per request to prevent runaway loops.
 
@@ -40,7 +40,7 @@ Tool calls are capped at **5 rounds** per request to prevent runaway loops.
 Empty body `{}`. The server:
 
 1. Calls MCP tools `get_dashboard_summary`, `get_submission_status`, and `get_workload_by_project` for the current calendar week.
-2. Sends the tool output to Claude with a fixed summarization prompt.
+2. Sends the tool output to Gemini with a fixed summarization prompt.
 3. Returns `{ "reply": "…" }` with sections for completed work, recurring blockers, and workload imbalance.
 
 ## Prompt design
@@ -60,7 +60,7 @@ The LLM proposes tool arguments, but those arguments are **untrusted input**:
 
 - Models can hallucinate field names, wrong date formats, or extra parameters.
 - A typo in `weekStart` should fail fast with a clear validation error instead of silently querying the wrong week.
-- Zod schemas are shared between REST query validation, MCP tool registration, and (indirectly) the shape Claude sees — one source of truth prevents drift.
+- Zod schemas are shared between REST query validation, MCP tool registration, and (indirectly) the JSON Schema Gemini sees via `functionDeclarations` — one source of truth prevents drift.
 
 Validation protects the **service layer**, not the browser. The MCP server and services never trust the model to supply correct types or semantics.
 
@@ -78,9 +78,9 @@ The model **cannot** choose which user or role to act as:
 | Topic | Behavior |
 |-------|----------|
 | Data visible to the model | Report and dashboard aggregates already available to Managers via the REST API (names, emails, report fields). No direct Mongo access. |
-| Conversation history | Stored in server memory only for the active `conversationId`. Not written to Anthropic logs beyond the current API request payload. |
+| Conversation history | Stored in server memory only for the active `conversationId`. Sent to Google only as part of the current Gemini API request payload. |
 | Cross-manager isolation | Conversations and MCP sessions are tied to the authenticated manager ID. |
-| Model training | Anthropic's **API** terms state that API inputs are not used to train models by default. This applies to the API product, not the consumer Claude app. Confirm current terms at [anthropic.com/policies](https://www.anthropic.com/policies). |
+| Model training | Google Gemini API data handling is governed by [Google AI terms](https://ai.google.dev/gemini-api/terms). Review current policies for your account tier; do not assume consumer Gemini app defaults apply to the API. |
 | Team-member PII | Limited to name/email already shown on manager dashboards; no broader org or HR data. |
 
 ## Configuration
@@ -88,12 +88,14 @@ The model **cannot** choose which user or role to act as:
 Add to `server/.env`:
 
 ```env
-ANTHROPIC_API_KEY=sk-ant-...
-ANTHROPIC_MODEL=claude-sonnet-4-6
+GEMINI_API_KEY=your-gemini-api-key
+GEMINI_MODEL=gemini-2.5-flash
 MCP_BASE_URL=http://localhost:5000
 ```
 
-`MCP_BASE_URL` defaults to `http://localhost:{PORT}` when omitted. The chat service connects to `{MCP_BASE_URL}/mcp` using the caller's JWT.
+`GEMINI_MODEL` defaults to `gemini-2.5-flash` when omitted. `MCP_BASE_URL` defaults to `http://localhost:{PORT}`. The chat service connects to `{MCP_BASE_URL}/mcp` using the caller's JWT.
+
+Get an API key from [Google AI Studio](https://aistudio.google.com/apikey).
 
 ## Frontend
 
@@ -108,9 +110,19 @@ Team members do not see the widget.
 ## Architecture
 
 ```
-ChatWidget → POST /api/chat → chatService → Anthropic API
-                              ↓ (tool_use)
+ChatWidget → POST /api/chat → chatService → Gemini API (@google/genai)
+                              ↓ (functionCall)
                          mcpClient → POST /mcp → MCP tools → *Service → MongoDB
 ```
 
 Services (`reportService`, `dashboardService`, etc.) are the single source of business logic for REST, MCP, and chat.
+
+## Gemini vs prior Anthropic integration
+
+| Topic | Behavior |
+|-------|----------|
+| Roles | Gemini uses `user` / `model` (not `assistant`). |
+| Tool results | Returned as `functionResponse` parts in a **user** turn, not separate `tool_result` blocks. |
+| System prompt | Passed via `systemInstruction` config, not a separate messages array. |
+| Parallel tools | Gemini may return multiple `functionCall` parts in one turn; all are executed before the next model call. |
+| Safety blocks | May return empty text with `finishReason: SAFETY` without throwing — chatService maps this to a 502 with a clear message. |

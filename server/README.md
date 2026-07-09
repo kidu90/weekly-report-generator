@@ -58,13 +58,13 @@ See [docs/ai-assistant.md](../docs/ai-assistant.md) for chat endpoints, prompt d
 
 Quick summary:
 
-- `POST /api/chat` — Manager-only free-form chat with Anthropic + MCP tool loop (max 5 rounds).
+- `POST /api/chat` — Manager-only free-form chat with Gemini + MCP tool loop (max 5 rounds).
 - `POST /api/chat/team-summary` — Manager-only canned weekly summary.
 - Conversation history is in-memory per `conversationId`, bound to the authenticated manager.
 - Tool inputs are Zod-validated even though the caller is an LLM — model output is untrusted.
 - The model only sees data a Manager could already fetch via the REST/MCP API.
 
-Configure `ANTHROPIC_API_KEY` (and optionally `ANTHROPIC_MODEL`, `MCP_BASE_URL`) in `server/.env`.
+Configure `GEMINI_API_KEY` (and optionally `GEMINI_MODEL`, `MCP_BASE_URL`) in `server/.env`. Default model: `gemini-2.5-flash`.
 
 ## Architecture
 

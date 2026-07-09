@@ -24,7 +24,7 @@ export function validateQuery<T extends z.ZodType>(schema: T) {
       return;
     }
 
-    (req as Request & { query: any }).query = result.data;
+    req.validatedQuery = result.data;
     next();
   };
 }

@@ -10,12 +10,13 @@ import type { AuthUser } from "../middleware/auth";
 import * as reportService from "../services/reportService";
 import * as dashboardService from "../services/dashboardService";
 import {
-  dashboardSummaryQueryShape,
-  dashboardSubmissionStatusQueryShape,
-  dashboardTrendQueryShape,
-  dashboardWorkloadQueryShape,
-} from "../validation/dashboardQuerySchema";
-import { reportToolQueryShape } from "../validation/reportQuerySchema";
+  mcpDashboardSummaryQueryShape,
+  mcpDashboardSubmissionStatusQueryShape,
+  mcpDashboardTrendQueryShape,
+  mcpDashboardWorkloadQueryShape,
+  mcpReportToolQueryShape,
+  parseMcpDate,
+} from "../validation/mcpToolSchemas";
 
 type SessionContext = {
   manager: AuthUser;
@@ -51,10 +52,10 @@ function createMcpServer(): McpServer {
 
   server.tool(
     "get_team_reports",
-    reportToolQueryShape,
+    mcpReportToolQueryShape,
     async ({ weekStart, project, teamMember }) => {
       const result = await reportService.listReportsForManager({
-        week: weekStart,
+        week: parseMcpDate(weekStart, "weekStart"),
         project,
         teamMember,
       });
@@ -68,9 +69,11 @@ function createMcpServer(): McpServer {
 
   server.tool(
     "get_dashboard_summary",
-    dashboardSummaryQueryShape,
+    mcpDashboardSummaryQueryShape,
     async ({ weekStart }) => {
-      const summary = await dashboardService.getWeeklySummary(weekStart);
+      const summary = await dashboardService.getWeeklySummary(
+        parseMcpDate(weekStart, "weekStart"),
+      );
       return {
         content: [{ type: "text", text: JSON.stringify(summary, null, 2) }],
         structuredContent: summary as unknown as Record<string, unknown>,
@@ -80,9 +83,12 @@ function createMcpServer(): McpServer {
 
   server.tool(
     "get_workload_by_project",
-    dashboardWorkloadQueryShape,
+    mcpDashboardWorkloadQueryShape,
     async ({ from, to }) => {
-      const workload = await dashboardService.getWorkloadByProject(from, to);
+      const workload = await dashboardService.getWorkloadByProject(
+        parseMcpDate(from, "from"),
+        parseMcpDate(to, "to"),
+      );
       return {
         content: [{ type: "text", text: JSON.stringify(workload, null, 2) }],
         structuredContent: { workload } as unknown as Record<string, unknown>,
@@ -92,10 +98,12 @@ function createMcpServer(): McpServer {
 
   server.tool(
     "get_submission_status",
-    dashboardSubmissionStatusQueryShape,
+    mcpDashboardSubmissionStatusQueryShape,
     async ({ weekStart }) => {
       const submissionStatus =
-        await dashboardService.getSubmissionStatusByMember(weekStart);
+        await dashboardService.getSubmissionStatusByMember(
+          parseMcpDate(weekStart, "weekStart"),
+        );
       return {
         content: [
           { type: "text", text: JSON.stringify({ submissionStatus }, null, 2) },
@@ -110,11 +118,11 @@ function createMcpServer(): McpServer {
 
   server.tool(
     "get_tasks_completed_trend",
-    dashboardTrendQueryShape,
+    mcpDashboardTrendQueryShape,
     async ({ from, to, groupBy }) => {
       const trend = await dashboardService.getTasksCompletedTrend(
-        from,
-        to,
+        parseMcpDate(from, "from"),
+        parseMcpDate(to, "to"),
         groupBy,
       );
       return {
